@@ -41,6 +41,7 @@ class Config
 		}
 		
 		self::$config = parse_ini_file(self::$config_file, true);
+		PhpFramework::log(PhpFramework::LOG_INFO, "Loaded config file " . self::$config_file);
 	}
 	
 	/**
