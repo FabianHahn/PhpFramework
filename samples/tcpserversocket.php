@@ -11,64 +11,53 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace PhpFramework\Database;
+set_time_limit(30);
 
-use \PhpFramework\PhpFramework as PF;
+require "../PhpFramework.php";
 
-/**
- * Abstract class that represents a database query
- *
- */
-abstract class DatabaseQuery
+use PhpFramework\PhpFramework as PF;
+
+PF::init();
+
+use PhpFramework\HtmlDebugLogger\HtmlDebugLogger;
+use PhpFramework\Socket\Socket;
+use PhpFramework\TcpSocket\TcpServerSocket;
+
+HtmlDebugLogger::enable(PF::LOG_ALL);
+
+function server_accept($socket, $child)
 {
-	/**
-	 * The PDO database driver this query should use
-	 *
-	 * @var string
-	 */
-	protected $pdo_driver;
-	
-	/**
-	 * The PhpFramework database associated with this query
-	 * 
-	 * @var Database
-	 */
-	protected $database;
-	
-	/**
-	 * Constructs the query by setting its driver
-	 *
-	 * @param string $pdo_driver		This query's PDO driver
-	 * @param Database $database		(optional) A PhpFramework database to associate with the query
-	 */
-	public function __construct($pdo_driver, $database = null)
-	{
-		$this->pdo_driver = $pdo_driver;
-		$this->database = $database;
-	}
-	
-	/**
-	 * Executes the query
-	 * 
-	 * @return DatabaseStatement	A DatabaseStatement object representing the result
-	 * @throws DatabaseException	If no Database is associated with this query
-	 */
-	public function execute()
-	{
-		if($this->database)
-		{
-			return $this->database->query($this);
-		}
-		else
-		{
-			throw new DatabaseException("Tried to execute query without associated Database object");
-		}
-	}
-	
-	/**
-	 * Converts the query into a string
-	 *
-	 */
-	abstract public function __toString();
+	$child->getReadEvent()->addListener("child_read");
+	$child->writeLine("Hello! Write me a line and I'll relay it to the browser page.");
+	echo "New incoming connection from " . $child->getPeerName() . "<br>";
 }
+
+function child_read($socket, $line)
+{
+	echo "Child connection " . $socket->getSocketId() . " wrote: " . htmlentities($line, ENT_QUOTES) . "<br>";
+}
+
+$socket = new TcpServerSocket("127.0.0.1", "4242");
+
+$socket->getAcceptEvent()->addListener("server_accept");
+
+if($socket->connect())
+{
+	echo "Server socket opened! I will now listen on port 4242 and relay everything to this page for the next 20 seconds.<br>";
+	
+	$start = time();
+	
+	while(time() - $start <= 20)
+	{
+		Socket::poll(100000);
+		flush();
+	}
+	
+	$socket->destroy();
+}
+else
+{
+	echo "Error: Could not open server socket!";
+}
+
 ?>

@@ -11,64 +11,78 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace PhpFramework\Database;
+namespace PhpFramework\UnixSocket;
 
 use \PhpFramework\PhpFramework as PF;
+use \PhpFramework\Socket\TransportSocket;
 
 /**
- * Abstract class that represents a database query
- *
+ * Represents an UNIX client socket that can connect to a socket inode
  */
-abstract class DatabaseQuery
+class UnixClientSocket extends TransportSocket
 {
 	/**
-	 * The PDO database driver this query should use
-	 *
+	 * The IP address to bind to
 	 * @var string
-	 */
-	protected $pdo_driver;
+	 */	
+	protected $address;
 	
 	/**
-	 * The PhpFramework database associated with this query
-	 * 
-	 * @var Database
+	 * Constructs a socket object
+	 * @override
+	 * @param string $address		the address to bind to
 	 */
-	protected $database;
-	
-	/**
-	 * Constructs the query by setting its driver
-	 *
-	 * @param string $pdo_driver		This query's PDO driver
-	 * @param Database $database		(optional) A PhpFramework database to associate with the query
-	 */
-	public function __construct($pdo_driver, $database = null)
+	public function __construct($address)
 	{
-		$this->pdo_driver = $pdo_driver;
-		$this->database = $database;
+		parent::__construct();
+		
+		$this->address = $address;
 	}
 	
 	/**
-	 * Executes the query
-	 * 
-	 * @return DatabaseStatement	A DatabaseStatement object representing the result
-	 * @throws DatabaseException	If no Database is associated with this query
-	 */
-	public function execute()
+	 * Connects a socket
+	 *
+	 * @return boolean			true if successful
+	 */	
+	public function connect()
 	{
-		if($this->database)
+		if(!$this->isConnected())
 		{
-			return $this->database->query($this);
+			if(($this->resource = socket_create(AF_UNIX, SOCK_STREAM, SOL_SOCKET)) !== false)
+			{
+				PF::log(PF::LOG_INFO, "Connecting UNIX client socket " . $this->socket_id . " to " . $this->address);
+			
+				if(socket_connect($this->resource, $this->address) !== false)
+				{
+					assert("\$this->isConnected()");
+					return true;
+				}
+				else
+				{
+					PF::log(PF::LOG_WARNING, "Failed to connect UNIX client socket " . $this->socket_id . " to " . $this->address . ". " . $this->getLastSocketError());
+					return false;
+				}
+			}
+			else
+			{
+				PF::log(PF::LOG_WARNING, "Creating UNIX socket failed. " . $this->getLastSocketError());
+				return false;
+			}
 		}
 		else
 		{
-			throw new DatabaseException("Tried to execute query without associated Database object");
+			PF::log(PF:LOG_WARNING, "Tried to connect already connected UNIX client socket.");
+			return false;
 		}
 	}
 	
 	/**
-	 * Converts the query into a string
-	 *
-	 */
-	abstract public function __toString();
+	 * Returns this server socket's address
+	 * @return string			the address
+	 */		
+	public function getAddress()
+	{
+		return $this->address;
+	}
 }
 ?>

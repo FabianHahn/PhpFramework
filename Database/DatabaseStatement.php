@@ -11,75 +11,75 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace PhpFramework\FileLogger;
+namespace PhpFramework\Database;
 
 use \PhpFramework\PhpFramework as PF;
 
 /**
- * Simple logger that logs into a file
+ * Represents a database statement returned after the execution of a query
+ *
  */
-class FileLogger
+class DatabaseStatement
 {
 	/**
-	 * Current log file handle
-	 * @var resource
+	 * This statement's internal PDO statement
+	 * 
+	 * @var PDOStatement
 	 */
-	private static $file;
+	protected $statement;
 	
 	/**
-	 * Cannot be called
+	 * Constructs the statement
+	 * 
+	 * @param PDOStatement $statement		the internal PDO statement
 	 */
-	private function __construct()
+	public function __construct(\PDOStatement $statement)
 	{
-		
+		$this->statement = $statement;
 	}
 	
 	/**
-	 * Enable the logger
-	 * @param string $file		file to log to
-	 * @param int $level		[optional] the desired log level
-	 * @throws Exception		if unable to write to $file
+	 * Fetches a row from the statement
+	 *
+	 * @return DatabaseRow
 	 */
-	public static function enable($file, $level = 3)
+	public function fetch()
 	{
-		self::$file = fopen($file, "a");
-		
-		if(self::$file === false)
+		if($rawrow = $this->statement->fetch(\PDO::FETCH_ASSOC, \PDO::FETCH_ORI_NEXT))
 		{
-			throw new Exception("Cannot write to log file " . $file . ", check path and permissions.");
+			return new DatabaseRow($rawrow);
 		}
 		
-		PF::setLogging($level, array(__NAMESPACE__ . "\\FileLogger", "log"));
+		return null;
 	}
 	
 	/**
-	 * Logs a message
-	 * @param int $level		the log level of this message
-	 * @param string $message	the los message
-	 * @throws Exception		if writing to log file failed
+	 * Fetches all rows from a database result
+	 *
+	 * @return array[DatabaseRow]
 	 */
-	public static function log($level, $message)
+	public function fetchAll()
 	{
-		$ret = 0;
-		$date = date("[d.m.Y-H:i:s]", time());
+		$fetched = $this->statement->fetchAll(\PDO::FETCH_ASSOC);
+		$ret = array();
 		
-		switch($level)
+		foreach($fetched as $row)
 		{
-			case PF::LOG_WARNING:
-				$ret = fwrite(self::$file, $date . " Warning: " . $message . "\n");
-			break;
-			case PF::LOG_INFO:
-				$ret = fwrite(self::$file, $date . " Info: " . $message . "\n");
-			break;
-			case PF::LOG_DEBUG:
-				$ret = fwrite(self::$file, $date . " Debug: " . $message . "\n");
-			break;
+			$ret[] = new DatabaseRow($row);
 		}
 		
-		if($ret === false)
-		{
-			throw new Exception("Writing to log file failed.");
-		}
+		return $ret;
+	}
+	
+	/**
+	 * Returns the statement's internal statement resource
+	 * 
+	 * @return PDOStatement
+	 */
+	public function getInternalStatement()
+	{
+		return $this->statement;
 	}
 }
+
 ?>

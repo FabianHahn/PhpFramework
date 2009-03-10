@@ -1,7 +1,30 @@
 <?php
-require_once "DatabaseException.php";
-require_once "DatabaseRow.php";
-require_once "DatabaseQuery.php";
+/**
+ * Copyright (c) 2008-2009, Fabian "smf68" Hahn <smf68@smf68.ch>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+namespace PhpFramework\Database;
+
+use \PhpFramework\PhpFramework as PF;
+
+require "DatabaseException.php";
+require "DatabaseRow.php";
+require "DatabaseStatement.php";
+require "DatabaseConnective.php";
+require "DatabaseConjunction.php";
+require "DatabaseDisjunction.php";
+require "DatabaseQuery.php";
+require "DatabaseInsertQuery.php";
+require "DatabaseSelectQuery.php";
+require "DatabaseUpdateQuery.php";
 
 /**
  * Class that represents a database connection
@@ -65,11 +88,11 @@ class Database
 	{		
 		try
 		{
-			$this->pdo = new PDO($this->pdo_dsn, $this->pdo_username, $this->pdo_password);
-			$this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-			PhpFramework::log(PhpFramework::LOG_INFO, "Database connected");
+			$this->pdo = new \PDO($this->pdo_dsn, $this->pdo_username, $this->pdo_password);
+			$this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+			PF::log(PF::LOG_INFO, "Database connected");
 		}
-		catch(PDOException $e)
+		catch(\PDOException $e)
 		{
 			throw new DatabaseException("Establishing PDO connection failed: " . $e->getMessage(), $e->getCode(), "", $e->getTrace());
 		}
@@ -82,7 +105,7 @@ class Database
 	public function disconnect()
 	{
 		$this->pdo = null;
-		PhpFramework::log(PhpFramework::LOG_INFO, "Database disconnected");
+		PF::log(PF::LOG_INFO, "Database disconnected");
 	}
 	
 	/**
@@ -92,28 +115,26 @@ class Database
 	 */
 	public function select()
 	{
-		return new DatabaseSelectQuery($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME));
+		return new DatabaseSelectQuery($this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME), $this);
 	}
 	
 	/**
 	 * Executes a SQL query
 	 *
 	 * @param string $query			The query to execute
-	 * @return PDOStatement			A PDOStatement object representing the result
+	 * @return DatabaseStatement	A DatabaseStatement object representing the result
 	 * @throws DatabaseException	If the query fails
 	 */
 	public function query($query)
 	{
-		echo $query . "\n";
-		
 		$this->last_query = $query;
 		
 		try
 		{
 			$pdo_statement = $this->pdo->query($query);
-			PhpFramework::log(PhpFramework::LOG_DEBUG, "Database query: " . $query);
+			PF::log(PF::LOG_DEBUG, "Database query: " . $query);
 		}
-		catch(PDOException $e)
+		catch(\PDOException $e)
 		{
 			throw new DatabaseException("Query failed: " . $e->getMessage(), $e->getCode(), $query, $e->getTrace());
 		}
@@ -125,42 +146,7 @@ class Database
 			throw new DatabaseException("Query failed: " . $error_info[2], $error_info[0], $query);
 		}
 		
-		return $pdo_statement;
-	}
-	
-	/**
-	 * Fetches a row from a database result
-	 *
-	 * @param PDOStatement $statement
-	 * @return DatabaseRow
-	 */
-	public function fetch(PDOStatement $statement)
-	{
-		if($rawrow = $statement->fetch(PDO::FETCH_ASSOC, PDO::FETCH_ORI_NEXT))
-		{
-			return new DatabaseRow($rawrow);;
-		}
-		
-		return null;
-	}
-	
-	/**
-	 * Fetches all rows from a database result
-	 *
-	 * @param PDOStatement $statement
-	 * @return array
-	 */
-	public function fetchAll(PDOStatement $statement)
-	{
-		$fetched = $statement->fetchAll(PDO::FETCH_ASSOC);
-		$ret = array();
-		
-		foreach($fetched as $row)
-		{
-			$ret[] = new DatabaseRow($row);
-		}
-		
-		return $ret;
+		return new DatabaseStatement($pdo_statement);
 	}
 	
 	/**

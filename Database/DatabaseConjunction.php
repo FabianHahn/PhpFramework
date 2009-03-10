@@ -15,60 +15,17 @@ namespace PhpFramework\Database;
 
 use \PhpFramework\PhpFramework as PF;
 
-/**
- * Abstract class that represents a database query
- *
- */
-abstract class DatabaseQuery
+class DatabaseConjunction extends DatabaseConnective
 {
 	/**
-	 * The PDO database driver this query should use
-	 *
-	 * @var string
-	 */
-	protected $pdo_driver;
-	
-	/**
-	 * The PhpFramework database associated with this query
+	 * Returns this class' connective
 	 * 
-	 * @var Database
+	 * @return string
 	 */
-	protected $database;
-	
-	/**
-	 * Constructs the query by setting its driver
-	 *
-	 * @param string $pdo_driver		This query's PDO driver
-	 * @param Database $database		(optional) A PhpFramework database to associate with the query
-	 */
-	public function __construct($pdo_driver, $database = null)
+	protected function getConnective()
 	{
-		$this->pdo_driver = $pdo_driver;
-		$this->database = $database;
-	}
-	
-	/**
-	 * Executes the query
-	 * 
-	 * @return DatabaseStatement	A DatabaseStatement object representing the result
-	 * @throws DatabaseException	If no Database is associated with this query
-	 */
-	public function execute()
-	{
-		if($this->database)
-		{
-			return $this->database->query($this);
-		}
-		else
-		{
-			throw new DatabaseException("Tried to execute query without associated Database object");
-		}
-	}
-	
-	/**
-	 * Converts the query into a string
-	 *
-	 */
-	abstract public function __toString();
+		return "AND";
+	}	
 }
+
 ?>

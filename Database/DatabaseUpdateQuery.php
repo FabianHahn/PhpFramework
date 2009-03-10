@@ -1,5 +1,21 @@
 <?php
 /**
+ * Copyright (c) 2008-2009, Fabian "smf68" Hahn <smf68@smf68.ch>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+namespace PhpFramework\Database;
+
+use \PhpFramework\PhpFramework as PF;
+
+/**
  * Class that represends an SQL UPDATE query
  *
  */
@@ -8,12 +24,6 @@ class DatabaseUpdateQuery extends DatabaseQuery
 	const UPDATE_TABLE = 0;
 	const UPDATE_SET = 1;
 	const UPDATE_WHERE = 2;
-	
-	const KEY_CONDITION_CONNECTIVE = 0;
-	const KEY_CONDITION_CONDITION = 1;
-	
-	const CONDITION_AND = 0;
-	const CONDITION_OR = 1;
 	
 	/**
 	 * Components this query is made of
@@ -25,16 +35,17 @@ class DatabaseUpdateQuery extends DatabaseQuery
 	/**
 	 * Constructs the select query and initializes its components
 	 * 
-	 * @param string $pdo_driver
+	 * @param string $pdo_driver		This query's PDO driver
+	 * @param Database $database		(optional) A PhpFramework database to associate with the query
 	 * @override
 	 */
-	public function __construct($pdo_driver)
+	public function __construct($pdo_driver, $database = null)
 	{
 		$this->query_components[self::UPDATE_TABLE] = "";
 		$this->query_components[self::UPDATE_SET] = array();
-		$this->query_components[self::UPDATE_WHERE] = array();
+		$this->query_components[self::UPDATE_WHERE] = "";
 		
-		parent::__construct($pdo_driver);
+		parent::__construct($pdo_driver, $database);
 	}	
 
 	/**
@@ -64,21 +75,72 @@ class DatabaseUpdateQuery extends DatabaseQuery
 	}
 	
 	/**
-	 * Adds a WHERE condition to the query
+	 * Adds a WHERE condition to the query connected by a conjunction
 	 *
-	 * @param string $condition
-	 * @param integer $connective		a CONDITION_ constant
-	 * @return DatabaseUpdateQuery				this query object instance
+	 * @param string $condition			the condition to add
+	 * @return DatabaseSelectQuery		this query object instance
 	 */
-	public function where($condition, $connective = 0)
+	public function whereAnd($condition)
 	{
-		$where = array();
-		$where[self::KEY_CONDITION_CONDITION] = $condition;
-		$where[self::KEY_CONDITION_CONNECTIVE] = $connective;
-
-		$this->query_components[self::UPDATE_WHERE][] = $where;
+		$where = $this->query_components[self::UPDATE_WHERE];
+		
+		if(!empty($where))
+		{
+			if($where instanceof DatabaseConjunction)
+			{
+				$where->addExpression($condition);
+			}
+			else
+			{
+				$this->query_components[self::UPDATE_WHERE] = new DatabaseConjunction(array($where, $condition));
+			}
+		}
+		else
+		{
+			$this->query_components[self::UPDATE_WHERE] = $condition;
+		}
 		
 		return $this;
+	}
+	
+	/**
+	 * Adds a WHERE condition to the query connected by a disjunction
+	 *
+	 * @param string $condition			the condition to add
+	 * @return DatabaseSelectQuery		this query object instance
+	 */
+	public function whereOr($condition)
+	{
+		$where = $this->query_components[self::UPDATE_WHERE];
+		
+		if(!empty($where))
+		{
+			if($where instanceof DatabaseDisjunction)
+			{
+				$where->addExpression($condition);
+			}
+			else
+			{
+				$this->query_components[self::UPDATE_WHERE] = new DatabaseDisjunction(array($where, $condition));
+			}
+		}
+		else
+		{
+			$this->query_components[self::UPDATE_WHERE] = $condition;
+		}
+		
+		return $this;
+	}
+	
+	/**
+	 * Shortcut for where
+	 * 
+	 * @param string $condition			the condition to add
+	 * @return DatabaseSelectQuery		this query object instance
+	 */
+	public function where($condition)
+	{
+		return $this->whereAnd($condition);
 	}
 
 	/**
@@ -121,33 +183,9 @@ class DatabaseUpdateQuery extends DatabaseQuery
 			$query .= "SET\n" . $sets . "\n";
 		}
 		
-		$wheres = "";
-		foreach($this->query_components[self::UPDATE_WHERE] as $where)
-		{
-			if(!empty($wheres))
-			{
-				switch($where[self::KEY_CONDITION_CONNECTIVE])
-				{
-					case self::CONDITION_AND:
-						$wheres .= " AND\n";
-					break;
-					case self::CONDITION_OR:
-						$wheres .= " OR\n";
-					break;
-					default:
-						throw new DatabaseException
-						(
-							"Query invalid: Received unsupported condition connective " . $where[self::KEY_CONDITION_CONNECTIVE]
-						);
-					break;
-				}
-			}
-			
-			$wheres .= "\t" . $where[self::KEY_CONDITION_CONDITION];
-		}
-		if(!empty($wheres))
-		{
-			$query .= "WHERE\n" . $wheres . "\n";
+		if($this->query_components[self::UPDATE_WHERE])
+		{				
+			$query .= "WHERE\n\t" . $this->query_components[self::UPDATE_WHERE] . "\n";
 		}
 
 		return trim($query) . ";";

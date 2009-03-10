@@ -11,75 +11,79 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace PhpFramework\FileLogger;
+namespace PhpFramework\Database;
 
 use \PhpFramework\PhpFramework as PF;
 
 /**
- * Simple logger that logs into a file
+ * Class that represents a connective in a condition clause of a query
  */
-class FileLogger
+abstract class DatabaseConnective
 {
 	/**
-	 * Current log file handle
-	 * @var resource
+	 * The expressions to connect
+	 * 
+	 * @var array[string]
 	 */
-	private static $file;
+	protected $expressions;
 	
 	/**
-	 * Cannot be called
+	 * Constructs a connective
+	 * 
+	 * @param array[string] $expressions		the expressions to connect
 	 */
-	private function __construct()
+	public function __construct($expressions)
 	{
-		
+		$this->expressions = $expressions;
 	}
 	
 	/**
-	 * Enable the logger
-	 * @param string $file		file to log to
-	 * @param int $level		[optional] the desired log level
-	 * @throws Exception		if unable to write to $file
+	 * Add an expression to the list of expressions
+	 * 
+	 * @param $expression		the expression to add
 	 */
-	public static function enable($file, $level = 3)
+	public function addExpression($expression)
 	{
-		self::$file = fopen($file, "a");
-		
-		if(self::$file === false)
-		{
-			throw new Exception("Cannot write to log file " . $file . ", check path and permissions.");
-		}
-		
-		PF::setLogging($level, array(__NAMESPACE__ . "\\FileLogger", "log"));
+		$this->expressions[] = $expression;
 	}
 	
 	/**
-	 * Logs a message
-	 * @param int $level		the log level of this message
-	 * @param string $message	the los message
-	 * @throws Exception		if writing to log file failed
+	 * Returns the string value of this connective
+	 * 
+	 * @return string			the string value of the connective
 	 */
-	public static function log($level, $message)
+	public function __toString()
 	{
-		$ret = 0;
-		$date = date("[d.m.Y-H:i:s]", time());
+		$ret = "";
 		
-		switch($level)
+		foreach($this->expressions as $expression)
 		{
-			case PF::LOG_WARNING:
-				$ret = fwrite(self::$file, $date . " Warning: " . $message . "\n");
-			break;
-			case PF::LOG_INFO:
-				$ret = fwrite(self::$file, $date . " Info: " . $message . "\n");
-			break;
-			case PF::LOG_DEBUG:
-				$ret = fwrite(self::$file, $date . " Debug: " . $message . "\n");
-			break;
+			if(!empty($ret))
+			{
+				$ret .= " " . $this->getConnective() . " ";
+			}
+			
+			var_dump($expression);
+			
+			if($expression instanceof DatabaseConnective) // Check if the expression is a connective itself
+			{
+				$ret .= "(" . $expression . ")";
+			}
+			else
+			{
+				echo "no connective\n";
+				$ret .= $expression;
+			}
 		}
 		
-		if($ret === false)
-		{
-			throw new Exception("Writing to log file failed.");
-		}
+		return $ret;
 	}
+	
+	/**
+	 * Returns this class' connective
+	 * 
+	 * @return string
+	 */
+	abstract protected function getConnective();
 }
 ?>

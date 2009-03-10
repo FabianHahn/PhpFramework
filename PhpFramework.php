@@ -1,4 +1,18 @@
 <?php
+/**
+ * Copyright (c) 2008-2009, Fabian "smf68" Hahn <smf68@smf68.ch>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+namespace PhpFramework;
+
 class PhpFramework
 {
 	const VERSION = "0.1";
@@ -16,13 +30,7 @@ class PhpFramework
 	 * @var array
 	 */
 	static private $loaded_modules = array();
-	
-	/**
-	 * The cached framework root path
-	 * @var string
-	 */
-	static private $framework_root;
-	
+		
 	/**
 	 * The current log level
 	 * @var int
@@ -36,6 +44,14 @@ class PhpFramework
 	static private $log_callback;
 	
 	/**
+	 * Initializes PhpFramework
+	 */	
+	public static function init()
+	{
+		spl_autoload_register(array(__CLASS__, "loadClass"));
+	}
+	
+	/**
 	 * Prints out some information about the framework (just like phpinfo)
 	 */
 	public static function info()
@@ -45,15 +61,15 @@ class PhpFramework
 		echo "Please report any bugs you may encounter to <a href=\"mailto:esmf68@gmail.com\">&lt;esmf68@gmail.com&gt;</a><br>";
 		echo "<h2>Available modules</h2>";
 		echo "<ul>\n";
-		$dir = dir(self::getFrameworkRoot());
+		$dir = dir(__DIR__);
 		
 		while(($entry = $dir->read()) !== false)
 		{
 			if($entry == "." || $entry === "..") continue;
 			
-			if(is_dir(self::getFrameworkRoot() . $entry))
+			if(is_dir(__DIR__ . "/" . $entry) && file_exists(__DIR__ . "/" . $entry . "/" . $entry . ".php"))
 			{
-				$subdir = dir(self::getFrameworkRoot() . $entry);
+				$subdir = dir(__DIR__ . "/" . $entry);
 				
 				$files = 0;
 				
@@ -62,7 +78,7 @@ class PhpFramework
 					if(preg_match("/^\\w*\\.php$/", $subentry)) $files++;
 				}			
 				
-				echo "<li><b>" . $entry . "</b>: " . $files . " class(es)</li>\n";
+				echo "<li><b>" . $entry . "</b>: " . $files . " " . ($files == 1 ? "file" : "files") . "</li>\n";
 			}
 		}
 		
@@ -70,75 +86,27 @@ class PhpFramework
 	}
 	
 	/**
-	 * Loads a framework module
-	 * @param string $module	the name of the module to load
-	 * @return boolean			true if success
+	 * Loads a framework class
+	 * @param string $class		the name of the class to load
 	 */
-	public static function loadModule($module)
-	{		
-		if(is_dir(self::getFrameworkRoot() . $module) && file_exists(self::getFrameworkRoot() . $module . "/" . $module . ".php"))
+	public static function loadClass($class)
+	{				
+		if(preg_match("/^PhpFramework\\\\(\\w*)\\\\(\\w*)$/", $class, $matches))
 		{
-			require self::getFrameworkRoot() . $module . "/" . $module . ".php";
-			$loaded_modules[] = $module;
+			self::log(self::LOG_DEBUG, "Autoloading framework class " . $class);
 			
-			self::log(self::LOG_INFO, "Module " . $module . " loaded.");
-			
-			return true;
-		}
-		
-		self::log(self::LOG_WARNING, "Module " . $module . " not found, could not be loaded.");
-		
-		return false;
-	}
-	
-	/**
-	 * Loads several framework modules
-	 * @param array[string] $modules	an array of modules to load
-	 * @return boolean					true if success
-	 */
-	public static function loadModules($modules)
-	{
-		$result = true;
-		
-		foreach($modules as $module)
-		{
-			$result = $result && self::loadModule($module);
-		}
-		
-		return $result;
-	}
-	
-	/**
-	 * Tries to satisfy a module dependency
-	 * @param array[string]|string $dependencies	a dependency or an array of dependencies
-	 * @throws Exception							if a dependency couldn't be met
-	 */
-	public static function depends($dependencies)
-	{
-		if(is_array($dependencies))
-		{
-			foreach($dependencies as $dependency)
+			$module = $matches[1];
+			$class_name = $matches[2];
+				
+			if(is_dir(__DIR__ . "/" . $module) && file_exists(__DIR__ . "/" . $module . "/" . $module . ".php") && file_exists(__DIR__ . "/" . $module . "/" . $class_name . ".php"))
 			{
-				self::depends($dependency);
+				require __DIR__ . "/" . $module . "/" . $module . ".php";
+				$loaded_modules[] = $module;
+				self::log(self::LOG_INFO, "Loaded framework module " . $module);
 			}
-		}
-		else
-		{
-			$dependency = $dependencies;
-			
-			$trace = debug_backtrace();
-			preg_match("/\\/(\\w*)\\.php$/", $trace[0]["file"], $matches);
-			$caller = $matches[1];
-			
-			self::log(self::LOG_DEBUG, $caller . " depends on " . $dependency);
-			
-			if(!self::isLoaded($dependency))
+			else
 			{
-				// Try to load
-				if(!self::loadModule($dependency))
-				{					
-					throw new Exception("Depencency on module " . $dependency . " could not be met (required by " . $caller . ")!");
-				}
+				self::log(self::LOG_WARNING, "Module " . $module . " could not be loaded (triggered by class " . $class . ").");
 			}
 		}
 	}
@@ -165,13 +133,7 @@ class PhpFramework
 	 */
 	public static function getFrameworkRoot()
 	{
-		if(!self::$framework_root)
-		{
-			preg_match("/^(.*\\/)\\w*\\.php$/", __FILE__, $matches);
-			self::$framework_root = $matches[1];
-		}
-		
-		return self::$framework_root;
+		return __DIR__;
 	}
 	
 	/**

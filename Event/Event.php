@@ -11,74 +11,75 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace PhpFramework\FileLogger;
+namespace PhpFramework\Event;
 
 use \PhpFramework\PhpFramework as PF;
 
 /**
- * Simple logger that logs into a file
+ * Class that represents events by implementing a "third-person" observer pattern
  */
-class FileLogger
+class Event
 {
 	/**
-	 * Current log file handle
-	 * @var resource
+	 * List of all listeners for this event
+	 * @var SplDoublyLinkedList
 	 */
-	private static $file;
+	protected $listeners;
 	
 	/**
-	 * Cannot be called
+	 * Constructs the event
 	 */
-	private function __construct()
+	public function __construct()
 	{
-		
+		$this->listeners = new \SplDoublyLinkedList();
 	}
 	
 	/**
-	 * Enable the logger
-	 * @param string $file		file to log to
-	 * @param int $level		[optional] the desired log level
-	 * @throws Exception		if unable to write to $file
+	 * Adds a listener to this event
+	 * @param callback $listener		a listener callback function
 	 */
-	public static function enable($file, $level = 3)
+	public function addListener($listener)
 	{
-		self::$file = fopen($file, "a");
-		
-		if(self::$file === false)
+		if(is_callable($listener))
 		{
-			throw new Exception("Cannot write to log file " . $file . ", check path and permissions.");
+			$this->listeners->push($listener);
+		}
+		else
+		{
+			throw new Exception("Trying to add uncallable listener");
+		}
+	}
+
+	/**
+	 * Removes a listener from this event
+	 * @param callback $del			the listener to get removed
+	 * @return boolean				true if listener was removed
+	 */
+	public function delListener($del)
+	{
+		foreach($this->listeners as $i => $listener)
+		{
+			if($listener === $del)
+			{
+				$this->listeners->offsetUnset($i);
+				return true;
+			}
 		}
 		
-		PF::setLogging($level, array(__NAMESPACE__ . "\\FileLogger", "log"));
+		return false;
 	}
 	
 	/**
-	 * Logs a message
-	 * @param int $level		the log level of this message
-	 * @param string $message	the los message
-	 * @throws Exception		if writing to log file failed
+	 * Triggers the event and notifies all listeners
+	 * @param array[mixed]			(optional) the arguments to the listener callbacks
 	 */
-	public static function log($level, $message)
+	public function triggerEvent()
 	{
-		$ret = 0;
-		$date = date("[d.m.Y-H:i:s]", time());
+		$params = func_get_args();
 		
-		switch($level)
+		foreach($this->listeners as $listener)
 		{
-			case PF::LOG_WARNING:
-				$ret = fwrite(self::$file, $date . " Warning: " . $message . "\n");
-			break;
-			case PF::LOG_INFO:
-				$ret = fwrite(self::$file, $date . " Info: " . $message . "\n");
-			break;
-			case PF::LOG_DEBUG:
-				$ret = fwrite(self::$file, $date . " Debug: " . $message . "\n");
-			break;
-		}
-		
-		if($ret === false)
-		{
-			throw new Exception("Writing to log file failed.");
+			call_user_func_array($listener, $params);
 		}
 	}
 }

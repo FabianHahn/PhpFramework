@@ -1,5 +1,21 @@
 <?php
 /**
+ * Copyright (c) 2008-2009, Fabian "smf68" Hahn <smf68@smf68.ch>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+namespace PhpFramework\Database;
+
+use \PhpFramework\PhpFramework as PF;
+
+/**
  * Class that represents an SQL SELECT database query
  *
  */
@@ -27,11 +43,6 @@ class DatabaseSelectQuery extends DatabaseQuery
 	const KEY_FROM_TABLE = 1;
 	const KEY_ORDER_TYPE = 0;
 	const KEY_ORDER_COLUMN = 1;
-	const KEY_CONDITION_CONNECTIVE = 0;
-	const KEY_CONDITION_CONDITION = 1;
-	
-	const CONDITION_AND = 0;
-	const CONDITION_OR = 1;
 	
 	const ORDER_ASC = 0;
 	const ORDER_DESC = 1;
@@ -46,57 +57,103 @@ class DatabaseSelectQuery extends DatabaseQuery
 	/**
 	 * Constructs the select query and initializes its components
 	 * 
-	 * @param string $pdo_driver
+	 * @param string $pdo_driver		The query's PDO driver
+	 * @param Database $database		(optional) A PhpFramework database to associate with the query
 	 * @override
 	 */
-	public function __construct($pdo_driver)
+	public function __construct($pdo_driver, $database = null)
 	{
 		$this->query_components[self::SELECT_COLUMNS] = array();
 		$this->query_components[self::SELECT_FROM] = array();
 		$this->query_components[self::SELECT_JOIN] = array();
-		$this->query_components[self::SELECT_WHERE] = array();
+		$this->query_components[self::SELECT_WHERE] = null;
 		$this->query_components[self::SELECT_GROUP] = array();
-		$this->query_components[self::SELECT_HAVING] = "";
+		$this->query_components[self::SELECT_HAVING] = null;
 		$this->query_components[self::SELECT_ORDER] = array();
 		$this->query_components[self::SELECT_LIMIT] = "";
 		
-		parent::__construct($pdo_driver);
+		parent::__construct($pdo_driver, $database);
 	}
 	
 	/**
 	 * Adds a column to the query
 	 *
-	 * @param string $table
-	 * @param string $column
-	 * @param string $alias
+	 * @param string $column			(optional) the column to select
+	 * @param string $table				the table name of the column to select
+	 * @param string $alias				(optional) a result alias for this column
 	 * @return DatabaseSelectQuery		this query object instance
 	 */
-	public function column($table, $column, $alias = "")
+	public function column($column, $table = "", $alias = "")
 	{
-		if(!empty($alias))
+		if(empty($alias))
 		{
-			$this->query_components[self::SELECT_COLUMNS][$alias] =
-				(!empty($table) ? "`" . $table . "`." : "") . "`" . $column . "`";
+			$temp = (!empty($table) ? "`" . $table . "`." : "") . "`" . $column . "`";
+			
+			$this->query_components[self::SELECT_COLUMNS][$temp] = $temp;
 		}
 		else
 		{
-			$temp = (!empty($table) ? "`" . $table . "`." : "") . "`" . $column . "`";
-			$this->query_components[self::SELECT_COLUMNS][$temp] = $temp;
+			$this->query_components[self::SELECT_COLUMNS][$alias] = (!empty($table) ? "`" . $table . "`." : "") . "`" . $column . "`";
 		}
 		
 		return $this;
 	}
+	
+	/**
+	 * Adds a COUNT aggregate function to the query
+	 *
+	 * @param string $column			the column to count
+	 * @param string $table				the table name of the column to count
+	 * @param string $alias				alias for the aggregate function's result
+	 * @return DatabaseSelectQuery		this query object instance
+	 */
+	public function columnCount($column, $table, $alias)
+	{
+		$this->query_components[self::SELECT_COLUMNS][$alias] = "COUNT(" . (!empty($table) ? "`" . $table . "`." : "") . "`" . $column . "`)";
+
+		return $this;
+	}
+	
+	/**
+	 * Adds a MIN aggregate function to the query
+	 *
+	 * @param string $column			the column to count
+	 * @param string $table				the table name of the column to minimize
+	 * @param string $alias				alias for the aggregate function's result
+	 * @return DatabaseSelectQuery		this query object instance
+	 */
+	public function columnMin($column, $table, $alias)
+	{
+		$this->query_components[self::SELECT_COLUMNS][$alias] = "MIN(" . (!empty($table) ? "`" . $table . "`." : "") . "`" . $column . "`)";
+
+		return $this;
+	}
+	
+	/**
+	 * Adds a MAX aggregate function to the query
+	 *
+	 * @param string $column			the column to count
+	 * @param string $table				the table name of the column to maximize
+	 * @param string $alias				alias for the aggregate function's result
+	 * @return DatabaseSelectQuery		this query object instance
+	 */
+	public function columnMax($column, $table, $alias)
+	{
+		$this->query_components[self::SELECT_COLUMNS][$alias] = "MAX(" . (!empty($table) ? "`" . $table . "`." : "") . "`" . $column . "`)";
+
+		return $this;
+	}	
 
 	/**
 	 * Adds a from clause to the query
 	 *
-	 * @param string $table
-	 * @param string $alias
+	 * @param string $table				the table to select from
+	 * @param string $alias				a table name alias
 	 * @return DatabaseSelectQuery		this query object instance
 	 */
 	public function from($table, $alias = "")
 	{
-		if(!empty($table) === false) throw new PreconditionViolation("table not empty");
+		if(empty($table)) throw new DatabaseException("Table name in FROM clause must not be empty");
 		
 		$this->query_components[self::SELECT_FROM][self::KEY_FROM_TABLE] = $table;
 		
@@ -112,18 +169,18 @@ class DatabaseSelectQuery extends DatabaseQuery
 	 * Adds a join clause to the query
 	 *
 	 * @param integer $type				a JOIN_ constant
-	 * @param string $target
-	 * @param array $conditions
-	 * @param string $alias
+	 * @param string $target			the join target table
+	 * @param string $conditions		ON joining conditions
+	 * @param string $alias				(optional) an alias for the joined table name
 	 * @return DatabaseSelectQuery		this query object instance
 	 */
-	public function join($type, $target, $conditions = array(), $alias = "")
+	public function join($type, $target, $conditions = "", $alias = "")
 	{		
 		$join = array();
 		$join[self::KEY_JOIN_TYPE] = $type;
 		$join[self::KEY_JOIN_TARGET] = $target;
 		
-		if(count($conditions))
+		if(!empty($conditions))
 		{
 			$join[self::KEY_JOIN_CONDITIONS] = $conditions;
 		}
@@ -139,31 +196,82 @@ class DatabaseSelectQuery extends DatabaseQuery
 	}
 	
 	/**
-	 * Adds a WHERE condition to the query
+	 * Adds a WHERE condition to the query connected by a conjunction
 	 *
-	 * @param string $condition
-	 * @param integer $connective		a CONDITION_ constant
+	 * @param string $condition			the condition to add
 	 * @return DatabaseSelectQuery		this query object instance
 	 */
-	public function where($condition, $connective = 0)
+	public function whereAnd($condition)
 	{
-		$where = array();
-		$where[self::KEY_CONDITION_CONDITION] = $condition;
-		$where[self::KEY_CONDITION_CONNECTIVE] = $connective;
-
-		$this->query_components[self::SELECT_WHERE][] = $where;
+		$where = $this->query_components[self::SELECT_WHERE];
+		
+		if(!empty($where))
+		{
+			if($where instanceof DatabaseConjunction)
+			{
+				$where->addExpression($condition);
+			}
+			else
+			{
+				$this->query_components[self::SELECT_WHERE] = new DatabaseConjunction(array($where, $condition));
+			}
+		}
+		else
+		{
+			$this->query_components[self::SELECT_WHERE] = $condition;
+		}
 		
 		return $this;
 	}
 	
 	/**
-	 * Adds a GROUP BY clause to the query
+	 * Adds a WHERE condition to the query connected by a disjunction
 	 *
-	 * @param string $table
-	 * @param string $column
+	 * @param string $condition			the condition to add
 	 * @return DatabaseSelectQuery		this query object instance
 	 */
-	public function group($table, $column)
+	public function whereOr($condition)
+	{
+		$where = $this->query_components[self::SELECT_WHERE];
+		
+		if(!empty($where))
+		{
+			if($where instanceof DatabaseDisjunction)
+			{
+				$where->addExpression($condition);
+			}
+			else
+			{
+				$this->query_components[self::SELECT_WHERE] = new DatabaseDisjunction(array($where, $condition));
+			}
+		}
+		else
+		{
+			$this->query_components[self::SELECT_WHERE] = $condition;
+		}
+		
+		return $this;
+	}
+	
+	/**
+	 * Shortcut for where
+	 * 
+	 * @param string $condition			the condition to add
+	 * @return DatabaseSelectQuery		this query object instance
+	 */
+	public function where($condition)
+	{
+		return $this->whereAnd($condition);
+	}	
+	
+	/**
+	 * Adds a GROUP BY clause to the query
+	 *
+	 * @param string $column			the column to group
+	 * @param string $table				(optional) the table with the column to group 
+	 * @return DatabaseSelectQuery		this query object instance
+	 */
+	public function group($column, $table = "")
 	{
 		$group = (!empty($table) ? "`" . $table . "`." : "") . "`" . $column . "`";
 		$this->query_components[self::SELECT_GROUP][] = $group;
@@ -172,38 +280,89 @@ class DatabaseSelectQuery extends DatabaseQuery
 	}
 	
 	/**
-	 * Adds a HAVING condition to the query
+	 * Adds a HAVING condition to the query connected by a conjunction
 	 *
-	 * @param string $condition
-	 * @param integer $connective		a CONDITION_ constant
+	 * @param string $condition			the condition to add
 	 * @return DatabaseSelectQuery		this query object instance
 	 */
-	public function having($condition, $connective = 0)
+	public function havingAnd($condition)
 	{
-		$having = array();
-		$having[self::KEY_CONDITION_CONDITION] = $condition;
-		$having[self::KEY_CONDITION_CONNECTIVE] = $connective;
-
-		$this->query_components[self::SELECT_HAVING][] = $having;
+		$where = $this->query_components[self::SELECT_HAVING];
+		
+		if(!empty($where))
+		{
+			if($where instanceof DatabaseConjunction)
+			{
+				$where->addExpression($condition);
+			}
+			else
+			{
+				$this->query_components[self::SELECT_HAVING] = new DatabaseConjunction(array($where, $condition));
+			}
+		}
+		else
+		{
+			$this->query_components[self::SELECT_HAVING] = $condition;
+		}
 		
 		return $this;
 	}
 	
 	/**
-	 * Adds an ORDER BY clause to the query
+	 * Adds a WHERE condition to the query connected by a disjunction
 	 *
-	 * @param string $table
-	 * @param string $column
-	 * @param integer $type				an ORDER_ constant
+	 * @param string $condition			the condition to add
 	 * @return DatabaseSelectQuery		this query object instance
 	 */
-	public function order($table, $column, $type = 0)
+	public function havingOr($condition)
+	{
+		$where = $this->query_components[self::SELECT_HAVING];
+		
+		if(!empty($where))
+		{
+			if($where instanceof DatabaseDisjunction)
+			{
+				$where->addExpression($condition);
+			}
+			else
+			{
+				$this->query_components[self::SELECT_HAVING] = new DatabaseDisjunction(array($where, $condition));
+			}
+		}
+		else
+		{
+			$this->query_components[self::SELECT_HAVING] = $condition;
+		}
+		
+		return $this;
+	}
+	
+	/**
+	 * Shortcut for havingAnd
+	 * 
+	 * @param string $condition			the condition to add
+	 * @return DatabaseSelectQuery		this query object instance
+	 */
+	public function having($condition)
+	{
+		return $this->havingAnd($condition);
+	}
+	
+	/**
+	 * Adds an ORDER BY clause to the query
+	 *
+	 * @param string $column			the ordering column
+	 * @param string $table				(optional) the table in which the ordering column is found 
+	 * @param integer $type				(optional) an ORDER_ constant
+	 * @return DatabaseSelectQuery		this query object instance
+	 */
+	public function order($column, $table = "", $type = 0)
 	{
 		$order = array();
 		$order[self::KEY_ORDER_COLUMN] = (!empty($table) ? "`" . $table . "`." : "") . "`" . $column . "`";
 		$order[self::KEY_ORDER_TYPE] = $type;
 
-		$this->query_components[self::SELECT_HAVING][] = $having;
+		$this->query_components[self::SELECT_ORDER][] = $order;
 		
 		return $this;
 	}		
@@ -211,8 +370,8 @@ class DatabaseSelectQuery extends DatabaseQuery
 	/**
 	 * Adds a LIMIT clause to the query
 	 *
-	 * @param integer $start
-	 * @param integer $count
+	 * @param integer $start			the starting rank of the limit
+	 * @param integer $count			the limit count
 	 * @return DatabaseSelectQuery		this query object instance
 	 */
 	public function limit($start, $count = null)
@@ -232,7 +391,7 @@ class DatabaseSelectQuery extends DatabaseQuery
 	/**
 	 * Converts the query into a string
 	 *
-	 * @throws DatabseException			if the query is incomplete or invalid
+	 * @throws DatabaseException		if the query is incomplete or invalid
 	 * @return string					the generated query
 	 */
 	public function __toString()
@@ -309,67 +468,15 @@ class DatabaseSelectQuery extends DatabaseQuery
 			
 			$query .= "\n";
 			
-			if(isset($join[self::KEY_JOIN_CONDITIONS]))
-			{				
-				$ons = "";
-				foreach($join[self::KEY_JOIN_CONDITIONS] as $on)
-				{
-					if(!empty($ons))
-					{
-						switch($on[self::KEY_CONDITION_CONNECTIVE])
-						{
-							case self::CONDITION_AND:
-								$ons .= " AND\n";
-							break;
-							case self::CONDITION_OR:
-								$ons .= " OR\n";
-							break;
-							default:
-								throw new DatabaseException
-								(
-									"Query invalid: Received unsupported condition connective " . 
-									$on[self::KEY_CONDITION_CONNECTIVE]
-								);
-							break;
-						}
-					}
-					
-					$ons .= "\t" . $on[self::KEY_CONDITION_CONDITION];
-				}
-				if(!empty($ons))
-				{
-					$query .= "ON\n" . $ons . " ";
-				}				 
+			if($join[self::KEY_JOIN_CONDITIONS])
+			{			
+				$query .= "ON\n\t" . $join[self::KEY_JOIN_CONDITIONS] . "\n";
 			}
 		}
 		
-		$wheres = "";
-		foreach($this->query_components[self::SELECT_WHERE] as $where)
-		{
-			if(!empty($wheres))
-			{
-				switch($where[self::KEY_CONDITION_CONNECTIVE])
-				{
-					case self::CONDITION_AND:
-						$wheres .= " AND\n";
-					break;
-					case self::CONDITION_OR:
-						$wheres .= " OR\n";
-					break;
-					default:
-						throw new DatabaseException
-						(
-							"Query invalid: Received unsupported condition connective " . $where[self::KEY_CONDITION_CONNECTIVE]
-						);
-					break;
-				}
-			}
-			
-			$wheres .= "\t" . $where[self::KEY_CONDITION_CONDITION];
-		}
-		if(!empty($wheres))
-		{
-			$query .= "WHERE\n" . $wheres . "\n";
+		if($this->query_components[self::SELECT_WHERE])
+		{				
+			$query .= "WHERE\n\t" . $this->query_components[self::SELECT_WHERE] . "\n";
 		}
 		
 		$groups = "";
@@ -387,9 +494,9 @@ class DatabaseSelectQuery extends DatabaseQuery
 			$query .= "GROUP BY\n" . $groups . "\n";
 		}
 		
-		if(!empty($this->query_components[self::SELECT_HAVING]))
-		{
-				$query .= "HAVING " . $this->query_components[self::SELECT_HAVING] . " ";
+		if($this->query_components[self::SELECT_HAVING])
+		{				
+			$query .= "HAVING\n\t" . $this->query_components[self::SELECT_HAVING] . "\n";
 		}
 		
 		$orders = "";

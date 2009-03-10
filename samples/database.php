@@ -11,75 +11,55 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace PhpFramework\FileLogger;
+require "../PhpFramework.php";
 
 use \PhpFramework\PhpFramework as PF;
 
+PF::init();
+
+use \PhpFramework\HtmlDebugLogger\HtmlDebugLogger;
+use \PhpFramework\Database\Database;
+use \PhpFramework\Database\DatabaseSelectQuery;
+use \PhpFramework\Database\DatabaseStatement;
+use \PhpFramework\Database\DatabaseException;
+
+HtmlDebugLogger::enable(PF::LOG_WARNING | PF::LOG_INFO);
+DatabaseException::enableHtmlOutput();
+
+$db = new Database("mysql:dbname=test", "test", "test");
+
+$db->connect();
+
 /**
- * Simple logger that logs into a file
+ * Assumes the following table:
+ * CREATE TABLE `test`.`users` (
+ * 		`user_id` INT UNSIGNED NOT NULL,
+ * 		`name` VARCHAR (20),
+ * 		`country` VARCHAR (200),
+ * 		`last_login` INT UNSIGNED DEFAULT '0' NOT NULL,
+ * 		PRIMARY KEY(`user_id`)
+ * )
  */
-class FileLogger
+
+$query = $db->select();
+$query->from("users")->group("country")->column("country")->columnCount("user_id", "", "count")->columnMax("last_login", "", "latest_login")->order("latest_login", "", DatabaseSelectQuery::ORDER_DESC);
+
+echo "<b>Query:</b><br><pre>" . $query . "</pre><br>\n";
+
+try
 {
-	/**
-	 * Current log file handle
-	 * @var resource
-	 */
-	private static $file;
+	$statement = $query->execute();
 	
-	/**
-	 * Cannot be called
-	 */
-	private function __construct()
-	{
-		
-	}
+	$rows = $statement->fetchAll();
 	
-	/**
-	 * Enable the logger
-	 * @param string $file		file to log to
-	 * @param int $level		[optional] the desired log level
-	 * @throws Exception		if unable to write to $file
-	 */
-	public static function enable($file, $level = 3)
+	foreach($rows as $row)
 	{
-		self::$file = fopen($file, "a");
-		
-		if(self::$file === false)
-		{
-			throw new Exception("Cannot write to log file " . $file . ", check path and permissions.");
-		}
-		
-		PF::setLogging($level, array(__NAMESPACE__ . "\\FileLogger", "log"));
-	}
-	
-	/**
-	 * Logs a message
-	 * @param int $level		the log level of this message
-	 * @param string $message	the los message
-	 * @throws Exception		if writing to log file failed
-	 */
-	public static function log($level, $message)
-	{
-		$ret = 0;
-		$date = date("[d.m.Y-H:i:s]", time());
-		
-		switch($level)
-		{
-			case PF::LOG_WARNING:
-				$ret = fwrite(self::$file, $date . " Warning: " . $message . "\n");
-			break;
-			case PF::LOG_INFO:
-				$ret = fwrite(self::$file, $date . " Info: " . $message . "\n");
-			break;
-			case PF::LOG_DEBUG:
-				$ret = fwrite(self::$file, $date . " Debug: " . $message . "\n");
-			break;
-		}
-		
-		if($ret === false)
-		{
-			throw new Exception("Writing to log file failed.");
-		}
+		echo $row->country . ": " . $row->count . " users (last activity: " . date("d.m.Y - H:i:s", $row->latest_login) . ")<br>";
 	}
 }
+catch(DatabaseException $e)
+{
+	echo $e;
+}
+
 ?>

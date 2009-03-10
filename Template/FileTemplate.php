@@ -11,75 +11,30 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace PhpFramework\FileLogger;
+namespace PhpFramework\Template;
 
 use \PhpFramework\PhpFramework as PF;
 
 /**
- * Simple logger that logs into a file
+ * A template from a file
  */
-class FileLogger
+class FileTemplate extends Template
 {
 	/**
-	 * Current log file handle
-	 * @var resource
+	 * Load the template from a file
+	 * @param string $filename			the location of the template file
 	 */
-	private static $file;
-	
-	/**
-	 * Cannot be called
-	 */
-	private function __construct()
+	public function __construct($filename)
 	{
+		$this->subs = array();
+		$this->data = file_get_contents($filename);
 		
-	}
-	
-	/**
-	 * Enable the logger
-	 * @param string $file		file to log to
-	 * @param int $level		[optional] the desired log level
-	 * @throws Exception		if unable to write to $file
-	 */
-	public static function enable($file, $level = 3)
-	{
-		self::$file = fopen($file, "a");
-		
-		if(self::$file === false)
+		if($this->data === false)
 		{
-			throw new Exception("Cannot write to log file " . $file . ", check path and permissions.");
+			throw new Exception("Could not load template file " . $filename);
 		}
 		
-		PF::setLogging($level, array(__NAMESPACE__ . "\\FileLogger", "log"));
-	}
-	
-	/**
-	 * Logs a message
-	 * @param int $level		the log level of this message
-	 * @param string $message	the los message
-	 * @throws Exception		if writing to log file failed
-	 */
-	public static function log($level, $message)
-	{
-		$ret = 0;
-		$date = date("[d.m.Y-H:i:s]", time());
-		
-		switch($level)
-		{
-			case PF::LOG_WARNING:
-				$ret = fwrite(self::$file, $date . " Warning: " . $message . "\n");
-			break;
-			case PF::LOG_INFO:
-				$ret = fwrite(self::$file, $date . " Info: " . $message . "\n");
-			break;
-			case PF::LOG_DEBUG:
-				$ret = fwrite(self::$file, $date . " Debug: " . $message . "\n");
-			break;
-		}
-		
-		if($ret === false)
-		{
-			throw new Exception("Writing to log file failed.");
-		}
-	}
+		PF::log(PF::LOG_INFO, "Loaded template file " . $filename);
+	}	
 }
 ?>
