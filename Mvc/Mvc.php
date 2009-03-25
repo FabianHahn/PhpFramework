@@ -102,7 +102,10 @@ class Mvc
 		PF::log(PF::LOG_INFO, "Loaded controller " . $controller_name);
 		
 		PF::log(PF::LOG_DEBUG, "Executing controller action " . $action);
-		call_user_func(array($controller, $action . "Action"));	
+		call_user_func(array($controller, $action . "Action"));
+		
+		PF::log(PF::LOG_DEBUG, "Unloading controller " . $controller_name);
+		unset($controller);
 	}
 	
 	/**
