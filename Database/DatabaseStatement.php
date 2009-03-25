@@ -72,6 +72,16 @@ class DatabaseStatement
 	}
 	
 	/**
+	 * Returns the number of rows in this statement (equivalent to mysql_num_rows etc)
+	 * 
+	 * @return int		number of rows in the statement
+	 */
+	public function numRows()
+	{
+		return $this->statement->rowCount();
+	}
+	
+	/**
 	 * Returns the statement's internal statement resource
 	 * 
 	 * @return PDOStatement
