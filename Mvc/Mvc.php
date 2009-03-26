@@ -75,6 +75,12 @@ class Mvc
 		
 	}
 	
+	/**
+	 * Initializes the MVC engine
+	 * 
+	 * @param string $document_root				the document root of the project
+	 * @param string $project_namespace			the project's namespace
+	 */
 	public static function init($document_root, $project_namespace)
 	{
 		self::$document_root = $document_root;
