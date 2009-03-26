@@ -37,6 +37,12 @@ class Mvc
 	protected static $index_controller = "Index";
 	
 	/**
+	 * The index action function
+	 * @var string
+	 */
+	protected static $index_action = "index";
+	
+	/**
 	 * The http root of the project that uses this MVC engine
 	 * @var string
 	 */
@@ -101,11 +107,8 @@ class Mvc
 		
 		PF::log(PF::LOG_INFO, "Loaded controller " . $controller_name);
 		
-		PF::log(PF::LOG_DEBUG, "Executing controller action " . $action);
-		call_user_func(array($controller, $action . "Action"));
-		
-		PF::log(PF::LOG_DEBUG, "Unloading controller " . $controller_name);
-		unset($controller);
+		// Execute the controller
+		call_user_func(array($controller, "execute"), $action);
 	}
 	
 	/**
@@ -139,6 +142,16 @@ class Mvc
 	public static function setIndexController($index_controller)
 	{
 		self::$index_controller = $index_controller;
+	}
+	
+	/**
+	 * Sets the index action
+	 * 
+	 * @param string $index_action			the index action function's name (be sure not to include the Action suffix)
+	 */
+	public static function setIndexAction($index_action)
+	{
+		self::$index_action = $index_action;
 	}
 	
 	/**

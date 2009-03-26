@@ -39,9 +39,21 @@ class Controller
 	}
 	
 	/**
+	 * Executes this controller
+	 * 
+	 * @param string $action		the action function to call
+	 */
+	public function execute($action)
+	{
+		PF::log(PF::LOG_DEBUG, "Executing controller action " . $action);
+		call_user_func(array($this, $action . "Action"));
+	}
+	
+	/**
 	 * This method catches all undefined calls and will redirect them to the index action if there is an action call
 	 * @param $name				the called method name
 	 * @param $arguments		the called method's arguments
+	 * @throws Exception		if the called method is not an action
 	 */
 	public function __call($name, $arguments)
 	{
