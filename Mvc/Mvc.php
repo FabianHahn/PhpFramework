@@ -55,17 +55,38 @@ class Mvc
 	protected static $project_namespace = "";
 	
 	/**
+	 * The MVC engine's controller class loader
+	 * 
+	 * @var ClassLoader
+	 */
+	protected static $controller_class_loader;
+	
+	/**
 	 * The MVC engine's model class loader
 	 * @var ClassLoader
 	 */
 	protected static $model_class_loader;
 	
 	/**
-	 * Class can't be instatiated
+	 * Class can't be instanciated
 	 */
 	private function __construct()
 	{
 		
+	}
+	
+	public static function init($document_root, $project_namespace)
+	{
+		self::$document_root = $document_root;
+		self::$project_namespace = $project_namespace;
+		
+		if($document_root[strlen($document_root) - 1] != "/")
+		{
+			self::$document_root .= "/";
+		}
+			
+		self::$controller_class_loader = new ClassLoader(self::$document_root . "Controllers", self::$project_namespace . "\\Controllers");
+		self::$controller_class_loader->register();
 	}
 	
 	/**
@@ -91,13 +112,11 @@ class Mvc
 		
 		if(file_exists(self::$document_root . "Controllers/" . $controller_name . "Controller.php"))
 		{
-			require self::$document_root . "Controllers/" . $controller_name . "Controller.php";
 			$controller = call_user_func(array(self::$project_namespace . "\\Controllers\\" . $controller_name . "Controller", "getInstance"));
 		}
 		else if(file_exists(self::$document_root . "Controllers/" . self::$index_controller . "Controller.php"))
 		{
 			PF::log(PF::LOG_INFO, "Redirecting controller call " . $controller_name . " to index controller " . self::$index_controller);			
-			require self::$document_root . "Controllers/IndexController.php";
 			$controller = call_user_func(array(self::$project_namespace . "\\Controllers\\IndexController", "getInstance"));
 		}
 		else
@@ -105,20 +124,18 @@ class Mvc
 			throw new Exception("Could not find index controller " . self::$index_controller . "!");
 		}
 		
-		PF::log(PF::LOG_INFO, "Loaded controller " . $controller_name);
-		
 		// Execute the controller
 		call_user_func(array($controller, "execute"), $action);
 	}
 	
 	/**
-	 * Enables model class autoloading. Do this AFTER you set your document root and your project namespace
+	 * Enables model class autoloading. Do this AFTER calling init
 	 */
 	public static function enableModelAutoloading()
 	{
 		if(!self::$model_class_loader)
 		{
-			self::$model_class_loader = new ClassLoader(self::$document_root . "Models/", (empty(self::$project_namespace) ? "" : self::$project_namespace . "\\") . "Models");
+			self::$model_class_loader = new ClassLoader(self::$document_root . "Models/", self::$project_namespace . "\\Models");
 		}
 		
 		self::$model_class_loader->register();
@@ -155,35 +172,12 @@ class Mvc
 	}
 	
 	/**
-	 * Sets the project namespace
-	 * @param string $namespace			the namespace to use
-	 */
-	public static function setProjectNamespace($namespace)
-	{
-		self::$project_namespace = $namespace;
-	}
-	
-	/**
 	 * Sets the http root to a specific url
 	 * @param string $http_root
 	 */
 	public static function setHttpRoot($http_root)
 	{
 		self::$http_root = $http_root;
-	}
-	
-	/**
-	 * Sets the document root to a specific location
-	 * @param string $document_root			the document root to set
-	 */
-	public static function setDocumentRoot($document_root)
-	{
-		self::$document_root = $document_root;
-		
-		if($document_root[strlen($document_root) - 1] != "/")
-		{
-			self::$document_root .= "/";
-		}
 	}
 	
 	/**
