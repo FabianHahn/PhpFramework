@@ -46,7 +46,7 @@ class Controller
 	public function execute($action)
 	{
 		PF::log(PF::LOG_DEBUG, "Executing controller action " . $action);
-		call_user_func(array($this, $action . "Action"));
+		return call_user_func(array($this, $action . "Action"));
 	}
 	
 	/**
