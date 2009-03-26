@@ -41,12 +41,11 @@ class Controller
 	/**
 	 * Executes this controller
 	 * 
-	 * @param string $action		the action function to call
+	 * @param string $action		the action handler to call
 	 */
 	public function execute($action)
 	{
-		PF::log(PF::LOG_DEBUG, "Executing controller action " . $action);
-		return call_user_func(array($this, $action . "Action"));
+		$this->callActionHandler($action);
 	}
 	
 	/**
@@ -75,5 +74,17 @@ class Controller
 	{
 		echo "The controller " . $this->getControllerName() . " doesn't have an index action associated. You can add one by overwriting the actionIndex() method.";
 	}
+	
+	/**
+	 * Call an action handler
+	 * 
+	 * @param $action				the action handler to call
+	 * @return mixed				the return value of the action handler
+	 */
+	protected function callActionHandler($action)
+	{
+		PF::log(PF::LOG_DEBUG, "Executing controller action " . $action);
+		return call_user_func(array($this, $action . "Action"));
+	}	
 }
 ?>
