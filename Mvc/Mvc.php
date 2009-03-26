@@ -84,7 +84,7 @@ class Mvc
 		else
 		{
 			$controller_name = self::$index_controller;
-			$action = "index";
+			$action = self::$index_action;
 		}
 		
 		PF::log(PF::LOG_DEBUG, "Autoloading controller " . $controller_name);
