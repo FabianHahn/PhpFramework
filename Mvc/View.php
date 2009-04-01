@@ -88,7 +88,9 @@ class View
 			
 			if($this->_buffered)
 			{
-				return ob_end_clean();
+				$buffer = ob_get_clean();
+				ob_end_clean();
+				return $buffer;
 			}
 		}
 	}
