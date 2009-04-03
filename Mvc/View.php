@@ -55,7 +55,7 @@ class View
 	 */
 	public function __get($name)
 	{
-		if(isset($this->_properties[$name]))
+		if(array_key_exists($name, $this->_properties))
 		{
 			return $this->_properties[$name];
 		}
