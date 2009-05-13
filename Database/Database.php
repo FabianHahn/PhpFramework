@@ -150,6 +150,16 @@ class Database
 	}
 	
 	/**
+	 * Returns the (most likely autoincremented) id of the last inserted row
+	 * 
+	 * @return int		the id of the last inserted row
+	 */
+	public function lastInsertId()
+	{
+		return $this->pdo->lastInsertId();
+	}
+	
+	/**
 	 * Quotes a string according to the PDO driver setting
 	 *
 	 * @param string $unquoted
