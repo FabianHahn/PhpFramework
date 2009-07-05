@@ -127,7 +127,7 @@ class Mvc
 		}
 		else
 		{
-			throw new Exception("Could not find index controller " . self::$index_controller . "!");
+			throw new \Exception("Could not find index controller " . self::$index_controller . "!");
 		}
 		
 		// Execute the controller
