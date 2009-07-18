@@ -106,7 +106,7 @@ class Mvc
 		if(preg_match("/^\\/(\\w*)(\\/(\\w+)(\\.\\w+)?)?$/", $path_info, $matches))
 		{
 			$controller_name = $matches[1] ? $matches[1] : self::$index_controller;
-			$action = $matches[3] ? $matches[3] : "index";
+			$action = isset($matches[3]) ? $matches[3] : "index";
 		}
 		else
 		{
