@@ -49,13 +49,13 @@ class HtmlDebugLogger
 		switch($level)
 		{
 			case PF::LOG_WARNING:
-				echo "<span style=\"color:red;\"><b>Warning:</b> " . $formatted . "</span><br>\n";
+				echo "<div style=\"color:red;\"><b>Warning:</b> " . $formatted . "</div>\n";
 			break;
 			case PF::LOG_INFO:
-				echo "<span style=\"color:green;\"><b>Info:</b> " . $formatted . "</span><br>\n";
+				echo "<div style=\"color:green;\"><b>Info:</b> " . $formatted . "</div>\n";
 			break;
 			case PF::LOG_DEBUG:
-				echo "<span style=\"color:blue;\"><b>Debug:</b> " . $formatted . "</span><br>\n";
+				echo "<div style=\"color:blue;\"><b>Debug:</b> " . $formatted . "</div>\n";
 			break;
 		}
 	}
