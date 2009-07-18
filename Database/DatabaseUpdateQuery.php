@@ -84,6 +84,8 @@ class DatabaseUpdateQuery extends DatabaseQuery
 	public function set($column, $value)
 	{
 		$this->query_components[self::UPDATE_SET][$column] = $value;
+		
+		return $this;
 	}
 	
 	/**
