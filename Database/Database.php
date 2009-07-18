@@ -119,6 +119,26 @@ class Database
 	}
 	
 	/**
+	 * Returns a fresh update query
+	 *
+	 * @return DatabseUpdateQuery
+	 */
+	public function update()
+	{
+		return new DatabaseUpdateQuery($this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME), $this);
+	}
+
+	/**
+	 * Returns a fresh select query
+	 *
+	 * @return DatabseSelectQuery
+	 */
+	public function insert()
+	{
+		return new DatabaseInsertQuery($this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME), $this);
+	}
+		
+	/**
 	 * Executes a SQL query
 	 *
 	 * @param string $query			The query to execute
