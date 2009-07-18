@@ -191,7 +191,7 @@ class DatabaseUpdateQuery extends DatabaseQuery
 					$sets .= ",\n";
 				}
 				
-				$sets .= "\t`" . $column_key . "` = '" . $column_value . "'";
+				$sets .= "\t`" . $column_key . "` = " . $column_value;
 			}
 			
 			$query .= "SET\n" . $sets . "\n";

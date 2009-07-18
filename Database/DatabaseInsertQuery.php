@@ -128,7 +128,7 @@ class DatabaseInsertQuery extends DatabaseQuery
 				
 				
 				$keys .= "\t`" . $column_key . "`";
-				$values .= "\t'" . $column_value . "'";
+				$values .= "\t" . $column_value . "";
 			}
 			
 			$query .= "(\n" . $keys . "\n)\nVALUES\n(\n" . $values . "\n)\n";
