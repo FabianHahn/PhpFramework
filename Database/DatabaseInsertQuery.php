@@ -50,7 +50,7 @@ class DatabaseInsertQuery extends DatabaseQuery
 	 * Adds the target table
 	 *
 	 * @param string $table_name
-	 * @return DatabaseUpdateQuery				this query object instance
+	 * @return DatabaseInsertQuery				this query object instance
 	 */	
 	public function table($table_name)
 	{
@@ -62,16 +62,30 @@ class DatabaseInsertQuery extends DatabaseQuery
 	/**
 	 * Adds an array of columns as VALUES clause to the query
 	 *
-	 * @param array $columns					the columns to update
-	 * @return DatabaseUpdateQuery				this query object instance
+	 * @param array $columns					the columns to insert
+	 * @return DatabaseInsertQuery				this query object instance
 	 */
-	public function values($columns)
+	public function valueArray($columns)
 	{
-		$this->query_components[self::INSERT_VALUES] = $columns;
+		$this->query_components[self::INSERT_VALUES] = array_merge($this->query_components[self::INSERT_VALUES], $columns);
 		
 		return $this;
 	}
-
+	
+	/**
+	 * Adds an column-value pair to the VALUES clause of the query
+	 *
+	 * @param string $column					the column to insert
+	 * @param string $value						the value to insert
+	 * @return DatabaseInsertQuery				this query object instance
+	 */
+	public function value($column, $value)
+	{
+		$this->query_components[self::INSERT_VALUES][$column] = $value;
+		
+		return $this;
+	}
+	
 	/**
 	 * Converts the query into a string
 	 *
