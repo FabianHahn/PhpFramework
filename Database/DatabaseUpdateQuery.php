@@ -67,11 +67,23 @@ class DatabaseUpdateQuery extends DatabaseQuery
 	 * @param array $columns					the columns to update
 	 * @return DatabaseUpdateQuery				this query object instance
 	 */
-	public function set($columns)
+	public function setArray($columns)
 	{
-		$this->query_components[self::UPDATE_SET] = $columns;
+		$this->query_components[self::UPDATE_SET] = array_merge($this->query_components[self::UPDATE_SET], $columns);
 		
 		return $this;
+	}
+	
+	/**
+	 * Adds a column-value pair to the SET clause to the query
+	 *
+	 * @param string $column					the column to update
+	 * @param string $value						the value to set for the column
+	 * @return DatabaseUpdateQuery				this query object instance
+	 */	
+	public function set($column, $value)
+	{
+		$this->query_components[self::UPDATE_SET][$column] = $value;
 	}
 	
 	/**
