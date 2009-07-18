@@ -129,7 +129,7 @@ class Database
 	}
 
 	/**
-	 * Returns a fresh select query
+	 * Returns a fresh insert query
 	 *
 	 * @return DatabseSelectQuery
 	 */
@@ -137,6 +137,16 @@ class Database
 	{
 		return new DatabaseInsertQuery($this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME), $this);
 	}
+	
+	/**
+	 * Returns a fresh delete query
+	 *
+	 * @return DatabseDeleteQuery
+	 */
+	public function delete()
+	{
+		return new DatabaseDeleteQuery($this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME), $this);
+	}	
 		
 	/**
 	 * Executes a SQL query
