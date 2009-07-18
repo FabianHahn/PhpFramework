@@ -102,7 +102,7 @@ class DatabaseInsertQuery extends DatabaseQuery
 		}
 		else
 		{
-			$query .= "\t`" . $this->query_components[self::UPDATE_FROM] . "`\n";
+			$query .= "\t`" . $this->query_components[self::INSERT_TABLE] . "`\n";
 		}
 		
 		if(!count($this->query_components[self::INSERT_VALUES]))

@@ -16,14 +16,13 @@ namespace PhpFramework\Database;
 use \PhpFramework\PhpFramework as PF;
 
 /**
- * Class that represends an SQL UPDATE query
+ * Class that represends an SQL DELETE query
  *
  */
-class DatabaseUpdateQuery extends DatabaseQuery
+class DatabaseDeleteQuery extends DatabaseQuery
 {
-	const UPDATE_TABLE = 0;
-	const UPDATE_SET = 1;
-	const UPDATE_WHERE = 2;
+	const DELETE_TABLE = 0;
+	const DELETE_WHERE = 1;
 	
 	/**
 	 * Components this query is made of
@@ -41,9 +40,8 @@ class DatabaseUpdateQuery extends DatabaseQuery
 	 */
 	public function __construct($pdo_driver, $database = null)
 	{
-		$this->query_components[self::UPDATE_TABLE] = "";
-		$this->query_components[self::UPDATE_SET] = array();
-		$this->query_components[self::UPDATE_WHERE] = "";
+		$this->query_components[self::DELETE_TABLE] = "";
+		$this->query_components[self::DELETE_WHERE] = "";
 		
 		parent::__construct($pdo_driver, $database);
 	}	
@@ -52,51 +50,24 @@ class DatabaseUpdateQuery extends DatabaseQuery
 	 * Adds the target table
 	 *
 	 * @param string $table_name
-	 * @return DatabaseUpdateQuery				this query object instance
+	 * @return DatabaseDeleteQuery				this query object instance
 	 */	
 	public function table($table_name)
 	{
-		$this->query_components[self::UPDATE_TABLE] = $table_name;
+		$this->query_components[self::DELETE_TABLE] = $table_name;
 		
 		return $this;
 	}
-	
-	/**
-	 * Adds an array of columns as SET clause to the query
-	 *
-	 * @param array $columns					the columns to update
-	 * @return DatabaseUpdateQuery				this query object instance
-	 */
-	public function setArray($columns)
-	{
-		$this->query_components[self::UPDATE_SET] = array_merge($this->query_components[self::UPDATE_SET], $columns);
-		
-		return $this;
-	}
-	
-	/**
-	 * Adds a column-value pair to the SET clause to the query
-	 *
-	 * @param string $column					the column to update
-	 * @param string $value						the value to set for the column
-	 * @return DatabaseUpdateQuery				this query object instance
-	 */	
-	public function set($column, $value)
-	{
-		$this->query_components[self::UPDATE_SET][$column] = $value;
-		
-		return $this;
-	}
-	
+
 	/**
 	 * Adds a WHERE condition to the query connected by a conjunction
 	 *
 	 * @param string $condition			the condition to add
-	 * @return DatabaseSelectQuery		this query object instance
+	 * @return DatabaseDeleteQuery		this query object instance
 	 */
 	public function whereAnd($condition)
 	{
-		$where = $this->query_components[self::UPDATE_WHERE];
+		$where = $this->query_components[self::DELETE_WHERE];
 		
 		if(!empty($where))
 		{
@@ -106,12 +77,12 @@ class DatabaseUpdateQuery extends DatabaseQuery
 			}
 			else
 			{
-				$this->query_components[self::UPDATE_WHERE] = new DatabaseConjunction(array($where, $condition));
+				$this->query_components[self::DELETE_WHERE] = new DatabaseConjunction(array($where, $condition));
 			}
 		}
 		else
 		{
-			$this->query_components[self::UPDATE_WHERE] = $condition;
+			$this->query_components[self::DELETE_WHERE] = $condition;
 		}
 		
 		return $this;
@@ -121,11 +92,11 @@ class DatabaseUpdateQuery extends DatabaseQuery
 	 * Adds a WHERE condition to the query connected by a disjunction
 	 *
 	 * @param string $condition			the condition to add
-	 * @return DatabaseSelectQuery		this query object instance
+	 * @return DatabaseDeleteQuery		this query object instance
 	 */
 	public function whereOr($condition)
 	{
-		$where = $this->query_components[self::UPDATE_WHERE];
+		$where = $this->query_components[self::DELETE_WHERE];
 		
 		if(!empty($where))
 		{
@@ -135,12 +106,12 @@ class DatabaseUpdateQuery extends DatabaseQuery
 			}
 			else
 			{
-				$this->query_components[self::UPDATE_WHERE] = new DatabaseDisjunction(array($where, $condition));
+				$this->query_components[self::DELETE_WHERE] = new DatabaseDisjunction(array($where, $condition));
 			}
 		}
 		else
 		{
-			$this->query_components[self::UPDATE_WHERE] = $condition;
+			$this->query_components[self::DELETE_WHERE] = $condition;
 		}
 		
 		return $this;
@@ -150,7 +121,7 @@ class DatabaseUpdateQuery extends DatabaseQuery
 	 * Shortcut for where
 	 * 
 	 * @param string $condition			the condition to add
-	 * @return DatabaseSelectQuery		this query object instance
+	 * @return DatabaseDeleteQuery		this query object instance
 	 */
 	public function where($condition)
 	{
@@ -165,41 +136,21 @@ class DatabaseUpdateQuery extends DatabaseQuery
 	 */
 	public function __toString()
 	{
-		$query = "UPDATE\n";
+		$query = "DELETE\n";
 		
-		if(empty($this->query_components[self::UPDATE_TABLE]))
+		if(empty($this->query_components[self::DELETE_TABLE]))
 		{
-			throw new DatabaseException("Query incomplete: No table name for UPDATE set.");
+			throw new DatabaseException("Query incomplete: No table name for DELETE set.");
 		}
 		else
 		{
-			$query .= "\t`" . $this->query_components[self::UPDATE_TABLE] . "`\n";
+			$query .= "\t`" . $this->query_components[self::DELETE_TABLE] . "`\n";
 		}
 		
-		if(!count($this->query_components[self::UPDATE_SET]))
-		{
-			throw new DatabaseException("Query inclomplete: No SET clause set.");
-		}
-		else
-		{
-			$sets = "";
-			
-			foreach($this->query_components[self::UPDATE_SET] as $column_key => $column_value)
-			{
-				if(!empty($sets))
-				{
-					$sets .= ",\n";
-				}
-				
-				$sets .= "\t`" . $column_key . "` = '" . $column_value . "'";
-			}
-			
-			$query .= "SET\n" . $sets . "\n";
-		}
 		
-		if($this->query_components[self::UPDATE_WHERE])
+		if($this->query_components[self::DELETE_WHERE])
 		{				
-			$query .= "WHERE\n\t" . $this->query_components[self::UPDATE_WHERE] . "\n";
+			$query .= "WHERE\n\t" . $this->query_components[self::DELETE_WHERE] . "\n";
 		}
 
 		return trim($query) . ";";
