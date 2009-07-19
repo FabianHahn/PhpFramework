@@ -44,7 +44,7 @@ class HtmlDebugLogger
 	 */
 	public static function log($level, $message)
 	{
-		$formatted = str_replace("\n", "<br>\n", $message);
+		$formatted = str_replace("\n", "<br>\n", htmlentities($message, ENT_QUOTES, "UTF-8"));
 		
 		switch($level)
 		{
