@@ -55,7 +55,7 @@ class View
 	 */
 	public function __get($name)
 	{
-		if(array_key_exists($name, $this->_properties))
+		if($this->hasProperty($name))
 		{
 			return $this->_properties[$name];
 		}
@@ -103,6 +103,16 @@ class View
 	public function setProperty($name, $value)
 	{
 		$this->_properties[$name] = $value;
+	}
+
+	/**
+	 * Checks if a view property is set
+	 * @param string $name		the property's name
+	 * @return bool				true if it is set
+	 */
+	public function hasProperty($name)
+	{
+		return array_key_exists($name, $this->_properties);		
 	}
 }
 ?>
