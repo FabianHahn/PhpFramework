@@ -25,6 +25,7 @@ require "DatabaseQuery.php";
 require "DatabaseInsertQuery.php";
 require "DatabaseSelectQuery.php";
 require "DatabaseUpdateQuery.php";
+require "DatabaseDeleteQuery.php";
 
 /**
  * Class that represents a database connection
@@ -145,6 +146,7 @@ class Database
 	 */
 	public function delete()
 	{
+		echo "asdf";
 		return new DatabaseDeleteQuery($this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME), $this);
 	}	
 		
