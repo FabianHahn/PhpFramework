@@ -155,5 +155,23 @@ class DatabaseDeleteQuery extends DatabaseQuery
 
 		return trim($query) . ";";
 	}
+	
+	/**
+	 * Executes the query
+	 * 
+	 * @return int					the number of rows affected
+	 * @throws DatabaseException	If no Database is associated with this query
+	 */
+	public function execute()
+	{
+		if($this->database)
+		{
+			return $this->database->exec($this);
+		}
+		else
+		{
+			throw new DatabaseException("Tried to execute query without associated Database object");
+		}
+	}	
 }
 ?>

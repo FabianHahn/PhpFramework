@@ -181,6 +181,30 @@ class Database
 	}
 	
 	/**
+	 * Executes a SQL query without returning its result set
+	 *
+	 * @param string $query			The query to execute
+	 * @return int					the number of rows affected by the query
+	 * @throws DatabaseException	If the query fails
+	 */	
+	public function exec($query)
+	{
+		$this->last_query = $query;
+		
+		try
+		{
+			$ret = $this->pdo->exec($query);
+			PF::log(PF::LOG_DEBUG, "Database query: " . $query);
+		}
+		catch(\PDOException $e)
+		{
+			throw new DatabaseException("Query failed: " . $e->getMessage(), $e->getCode(), $query, $e->getTrace());
+		}
+		
+		return $ret;
+	}
+	
+	/**
 	 * Returns the (most likely autoincremented) id of the last inserted row
 	 * 
 	 * @return int		the id of the last inserted row
