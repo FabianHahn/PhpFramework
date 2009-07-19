@@ -15,7 +15,7 @@ namespace PhpFramework;
 
 class PhpFramework
 {
-	const VERSION = "0.1";
+	const VERSION = "0.2";
 	
 	/**
 	 * Log level constants
