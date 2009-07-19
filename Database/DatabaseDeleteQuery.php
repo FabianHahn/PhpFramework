@@ -136,7 +136,7 @@ class DatabaseDeleteQuery extends DatabaseQuery
 	 */
 	public function __toString()
 	{
-		$query = "DELETE\n";
+		$query = "DELETE FROM\n";
 		
 		if(empty($this->query_components[self::DELETE_TABLE]))
 		{
