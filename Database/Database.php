@@ -146,7 +146,6 @@ class Database
 	 */
 	public function delete()
 	{
-		echo "asdf";
 		return new DatabaseDeleteQuery($this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME), $this);
 	}	
 		
