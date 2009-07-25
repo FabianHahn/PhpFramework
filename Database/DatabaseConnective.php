@@ -63,15 +63,12 @@ abstract class DatabaseConnective
 				$ret .= " " . $this->getConnective() . " ";
 			}
 			
-			var_dump($expression);
-			
 			if($expression instanceof DatabaseConnective) // Check if the expression is a connective itself
 			{
 				$ret .= "(" . $expression . ")";
 			}
 			else
 			{
-				echo "no connective\n";
 				$ret .= $expression;
 			}
 		}
